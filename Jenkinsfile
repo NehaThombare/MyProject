@@ -11,9 +11,13 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
+                echo 'Building temporary test image...'
+                // Create a temporary container blueprint that copies your current workspace inside it
+                sh 'docker build -t temporary-test-env -f - . <<EOF\nFROM python:3.7-slim\nWORKDIR /app\nCOPY . .\nRUN pip install -r requirements.txt\nCMD ["pytest"]\nEOF'
+                
                 echo 'Running python automated unit tests...'
-                // Jenkins tells your local Docker engine to spin up a quick python environment to run pytest
-                sh 'docker run --rm -v "$(pwd)":/app -w /app python:3.7-slim sh -c "pip install -r requirements.txt && pytest"'
+                // Run the isolated test container
+                sh 'docker run --rm temporary-test-env'
             }
         }
 
